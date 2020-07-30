@@ -1,0 +1,72 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zksync-server
+  namespace: colexi-dev
+  labels:
+    app: zksync-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zksync-server
+  template:
+    metadata:
+      labels:
+        app: zksync-server
+    spec:
+      containers: 
+        - name: zksync-server
+          image: gcr.io/colexi/zksync:dev
+          imagePullPolicy: Always
+          command: [ "/usr/local/bin/server" ]
+          ports:
+            - containerPort: 3000
+            - containerPort: 3030
+            - containerPort: 3031
+            - containerPort: 8088
+          envFrom:
+            - configMapRef:
+                name: zksync-server-configmap
+          env:
+            - name: OPERATOR_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: zksync-server-secrets
+                  key: OPERATOR_PRIVATE_KEY
+            - name: WEB3_URL
+              value: "http://$(GETH_SERVICE_HOST):$(GETH_SERVICE_PORT)"
+            - name: DATABASE_URL
+              value: "postgres://postgres@$(POSTGRES_SERVICE_HOST):$(POSTGRES_SERVICE_PORT)/plasma"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zksync-prover
+  namespace: colexi-dev
+  labels:
+    app: zksync-prover
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zksync-prover
+  template:
+    metadata:
+      labels:
+        app: zksync-prover
+    spec:
+      containers: 
+        - name: zksync-prover
+          image: gcr.io/colexi/zksync:dev
+          imagePullPolicy: Always
+          command: [ "/usr/local/bin/dummy_prover", "dev_dummy_prover" ]
+          envFrom:
+            - configMapRef:
+                name: zksync-prover-configmap
+          env:
+            - name: PROVER_SERVER_URL
+              value: "http://$(ZKSYNC_PROVER_SERVER_SERVICE_HOST):$(ZKSYNC_PROVER_SERVER_SERVICE_PORT_PROVER_SERVER)"
+  
+  

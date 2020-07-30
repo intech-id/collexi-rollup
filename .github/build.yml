@@ -1,0 +1,54 @@
+name: Build
+on:
+  push:
+     branches:
+       - dev
+
+env:
+  IMAGE: zksync
+  IMAGE_TAG: dev
+  REGISTRY_HOSTNAME: gcr.io
+  NAMESPACE: colexi-dev
+  GKE_ZONE: europe-west1-b	
+  GKE_CLUSTER: colexi-dev
+  DEPLOYMENT_NAME_SERVER: zksync-server
+  DEPLOYMENT_NAME_PROVER: zksync-prover
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: Setup gcloud
+        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          version: '290.0.1'
+          service_account_email: ${{ secrets.GKE_EMAIL }}
+          service_account_key: ${{ secrets.GKE_KEY }}
+
+      - name: Setup docker
+        run: gcloud auth configure-docker
+
+      - name: Build docker image
+        run: docker build -t $REGISTRY_HOSTNAME/${{ secrets.GKE_PROJECT }}/$IMAGE:$IMAGE_TAG .
+
+      - name: Publish to GCR
+        run: docker push $REGISTRY_HOSTNAME/${{ secrets.GKE_PROJECT }}/$IMAGE:$IMAGE_TAG
+  
+      - name: Deploy to GKE
+        run: |
+          gcloud container clusters get-credentials $GKE_CLUSTER --zone $GKE_ZONE --project ${{ secrets.GKE_PROJECT }}
+          kubectl apply -f manifests/configmap.yml
+          kubectl apply -f manifests/secret.yml
+          kubectl apply -f manifests/service.yml
+          kubectl apply -f manifests/deployment.yml
+          kubectl rollout restart --namespace $NAMESPACE deployment/$DEPLOYMENT_NAME_SERVER
+          kubectl rollout status --namespace $NAMESPACE deployment/$DEPLOYMENT_NAME_SERVER
+          kubectl rollout restart --namespace $NAMESPACE deployment/$DEPLOYMENT_NAME_PROVER
+          kubectl rollout status --namespace $NAMESPACE deployment/$DEPLOYMENT_NAME_PROVER
+  

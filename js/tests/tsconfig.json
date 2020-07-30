@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "types" : ["node", "ethers", "zksync"],
+        "downlevelIteration": true,
+        "lib": [
+            "es2019"
+        ],
+    },
+}

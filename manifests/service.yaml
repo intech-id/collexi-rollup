@@ -1,0 +1,39 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zksync-prover-server
+  namespace: colexi-dev
+  labels:
+    app: zksync-server
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8088
+      targetPort: 8088
+      name: prover-server
+  selector:
+    app: zksync-server
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zksync-server
+  namespace: colexi-dev
+  labels:
+    app: zksync-server
+spec:
+  type: LoadBalancer
+  loadBalancerIP: '34.78.182.61'
+  ports:
+    - port: 3000
+      targetPort: 3000
+      name: rest
+    - port: 3030
+      targetPort: 3030
+      name: http-jsonrpc
+    - port: 3031
+      targetPort: 3031
+      name: ws-jsonrpc
+  selector:
+    app: zksync-server

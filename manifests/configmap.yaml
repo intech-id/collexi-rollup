@@ -1,0 +1,56 @@
+---
+apiVersion: v1 
+kind: ConfigMap 
+metadata:
+  name: zksync-server-configmap
+  namespace: colexi-dev
+  labels:
+    app: zksync-server
+data:
+  OPERATOR_ETH_ADDRESS: "0xbbbeDed629bfc1bc803378Ba1014d925f42C1484"
+  OPERATOR_FRANKLIN_ADDRESS: "0xbbbeDed629bfc1bc803378Ba1014d925f42C1484"
+  GOVERNANCE_GENESIS_TX_HASH: "0xb99ebfea46cbe05a21cd80fe5597d97b204befc52a16303f579c607dc1ac2e2e"
+  CONTRACT_GENESIS_TX_HASH: "0xb99ebfea46cbe05a21cd80fe5597d97b204befc52a16303f579c607dc1ac2e2e"
+  CONTRACT_ADDR: "0xe9d7D2385EC934A261dF9124BCEafDAAFB89E69f"
+  GOVERNANCE_ADDR: "0x0D60Ae98cC142236141d7971b7e1a72c6090C67B"
+  CHAIN_ID: "22"
+  GAS_PRICE_FACTOR: "0"
+  ETH_NETWORK: "dev"
+  DB_POOL_SIZE: "10"
+  REST_API_BIND: "0.0.0.0:3000"
+  HTTP_RPC_API_BIND: "0.0.0.0:3030"
+  WS_API_BIND: "0.0.0.0:3031"
+  RUST_BACKTRACE: "1"
+  BLOCK_CHUNK_SIZES: "8"
+  PROVER_SERVER_BIND: "0.0.0.0:8088"
+  API_REQUESTS_CACHES_SIZE: "10000"
+  RUST_LOG: "storage=info,server=debug,prover=debug,plasma=info,eth_client=info,data_restore=info,dummy_prover=info,key_generator=info,exodus_test=info,loadtest=info,server_supervisor=info,kube=debug"
+  CONFIRMATIONS_FOR_ETH_EVENT: "0"
+  ETH_WATCH_POLL_INTERVAL: "300"
+  SERVER_REPLICA_NAME: "server-1"
+  PROVER_PREPARE_DATA_INTERVAL: "500"
+  PROVER_HEARTBEAT_INTERVAL: "1000"
+  PROVER_CYCLE_WAIT: "500"
+  PROVER_GONE_TIMEOUT: "60000"
+  ETH_TX_POLL_PERIOD: "3"
+  ETH_EXPECTED_WAIT_TIME_BLOCK: "30"
+  ETH_WAIT_CONFIRMATIONS: "1"
+  ETH_MAX_TXS_IN_FLIGHT: "3"
+  ETH_GAS_PRICE_LIMIT_UPDATE_INTERVAL: "150"
+  ETH_GAS_PRICE_LIMIT_SCALE_FACTOR: "0"
+
+---
+apiVersion: v1 
+kind: ConfigMap 
+metadata:
+  name: zksync-prover-configmap
+  namespace: colexi-dev
+  labels:
+    app: zksync-server
+data:
+  PROVER_PREPARE_DATA_INTERVAL: "500"
+  PROVER_HEARTBEAT_INTERVAL: "1000"
+  PROVER_CYCLE_WAIT: "500"
+  PROVER_GONE_TIMEOUT: "60000"
+  SUPPORTED_BLOCK_CHUNKS_SIZES: "8,32"
+  REQ_SERVER_TIMEOUT: "10"
