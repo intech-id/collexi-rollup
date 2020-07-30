@@ -57,7 +57,7 @@ jobs:
 
       - name: Build contracts
         run: |
-          yarn install
+          yarn add ethereum-waffle@2.0.12
           yarn waffle .waffle.ci.json
         working-directory: ./contracts
   
