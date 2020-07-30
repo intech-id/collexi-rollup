@@ -1,6 +1,6 @@
 FROM rust:1.44 AS builder
 
-ARG zk_env="k8s"
+ARG zk_env="dev"
 
 WORKDIR /build
 
