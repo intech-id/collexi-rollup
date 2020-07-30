@@ -3,5 +3,5 @@
 /flat
 /flat_build
 /contracts/generated
-/contracts/KeysWithPlonkVerifier.sol
+#/contracts/KeysWithPlonkVerifier.sol // Shoud no be commited, but currently required for Github Actions
 /contracts/TokenInit.sol
