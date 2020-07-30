@@ -1,0 +1,16 @@
+{
+  "sourcesPath": "./contracts",
+  "targetPath": "./build",
+  "compilerType": "solcjs",
+  "compilerVersion": "0.5.17",
+  "compilerOptions": {
+      "optimizer": {
+          "enabled": true,
+          "runs": 200
+      }
+  },
+  "ganacheOptions": {
+      "gasLimit": "100000000",
+      "gasPrice": "0x0"
+  }
+}

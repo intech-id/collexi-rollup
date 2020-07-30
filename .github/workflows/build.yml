@@ -13,6 +13,7 @@ env:
   GKE_CLUSTER: colexi-dev
   DEPLOYMENT_NAME_SERVER: zksync-server
   DEPLOYMENT_NAME_PROVER: zksync-prover
+  ERC721_ADDRESS: '0x5E6D086F5eC079ADFF4FB3774CDf3e8D6a34F7E9'
 
 jobs:
   build:
@@ -34,6 +35,32 @@ jobs:
       - name: Setup docker
         run: gcloud auth configure-docker
 
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '10.x'
+
+      - name: Generate TokenInit.sol
+        run: |
+          echo "pragma solidity ^0.5.0;
+
+            contract TokenDeployInit {
+              function getTokens() internal pure returns (address[] memory) {
+                  address[] memory tokens = new address[](0);
+                  return tokens;
+              }
+          
+              function getERC721Address() internal pure returns (address) {
+                  return $ERC721_ADDRESS;
+              }
+          }" > ./contracts/TokenInit.sol
+
+      - name: Build contracts
+        run: |
+          yarn install
+          yarn waffle .waffle.ci.json
+        working-directory: ./contracts
+  
       - name: Build docker image
         run: docker build -t $REGISTRY_HOSTNAME/${{ secrets.GKE_PROJECT }}/$IMAGE:$IMAGE_TAG .
 
