@@ -22,17 +22,14 @@ cd ../../
 * Build & deploy contracts :  
 ```
 zksync build-contracts
-f genesis.sh
 f bin/deploy-contracts-custom.sh
+f genesis.sh
 ```
 
 * Generate and insert Postgres data :
 ```
-CONTRACT_ADDR=$(f bash -c 'echo $CONTRACT_ADDR')
-GOVERNANCE_ADDR=$(f bash -c 'echo $GOVERNANCE_ADDR')
-
-echo "INSERT INTO server_config (contract_addr, gov_contract_addr) VALUES ('$CONTRACT_ADDR', '$GOVERNANCE_ADDR') ON CONFLICT (id) DO UPDATE SET (contract_addr, gov_contract_addr) = ('$CONTRACT_ADDR', '$GOVERNANCE_ADDR')"
-echo "INSERT INTO eth_parameters (nonce, gas_price_limit, commit_ops, verify_ops, withdraw_ops) VALUES ('0', '400000000000', 0, 0, 0) ON CONFLICT (id) DO UPDATE SET (commit_ops, verify_ops, withdraw_ops) = (0, 0, 0)"
+zksync db-insert-contract
+zksync db-insert-eth-data
 ```
 
 * Update `zksync/manifests/configmap.yml` and `rollup-ui/manifests/configmap.yml` with contract addresses
