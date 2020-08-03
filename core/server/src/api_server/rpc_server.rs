@@ -147,6 +147,24 @@ pub struct ContractAddressResp {
     pub gov_contract: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TransferHistory {
+    pub from: String,
+    pub to: String,
+    pub verified: bool,
+    pub block_number: i64,
+    pub date: String,
+    pub tx_hash: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenInfoResp {
+    pub history: Vec<TransferHistory>,
+    pub owner: Option<String>,
+}
+
 /// Flattened `PriorityOp` object representing a deposit operation.
 /// Used in the `OngoingDepositsResp`.
 #[derive(Debug, Serialize, Deserialize)]
@@ -280,6 +298,9 @@ pub trait Rpc {
 
     #[rpc(name = "get_confirmations_for_eth_op_amount", returns = "u64")]
     fn get_confirmations_for_eth_op_amount(&self) -> Result<u64>;
+
+    #[rpc(name = "token_info")]
+    fn token_info(&self, token_id: u16) -> Result<TokenInfoResp>;
 }
 
 #[derive(Clone)]
@@ -756,6 +777,47 @@ impl Rpc for RpcApp {
         Ok(closest_packable_fee_amount(&floor_big_decimal(
             &(amount / BigDecimal::from(100)),
         )))
+    }
+
+    fn token_info(&self, token_id: u16) -> Result<TokenInfoResp> {
+        log::debug!("Get token_info for token {}", token_id);
+        let storage = self.access_storage()?;
+        let history = storage.colexi_queries().get_transfer_history(token_id).map_err(|err| {
+            log::error!(
+                "[{}:{}:{}] Internal Server Error: '{}';",
+                file!(),
+                line!(),
+                column!(),
+                err
+            );
+            Error::internal_error()
+        })?;
+        let history: Vec<TransferHistory> = history.iter().map(|transfer| {
+            TransferHistory {
+                from: transfer.from.clone(),
+                to: transfer.to.clone(),
+                verified: transfer.proof_block_number.is_some(),
+                block_number: transfer.block_number,
+                date: chrono::DateTime::<chrono::Utc>::from_utc(transfer.created_at, chrono::Utc).format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+                tx_hash: format!("0x{}", hex::encode(&transfer.tx_hash)),
+            }
+        }).collect();
+        let owner = storage.colexi_queries().get_current_owner(token_id).map_err(|err| {
+            log::error!(
+                "[{}:{}:{}] Internal Server Error: '{}';",
+                file!(),
+                line!(),
+                column!(),
+                err
+            );
+            Error::internal_error()
+        })?;
+        let result = TokenInfoResp {
+            history: history,
+            owner: owner.map(|account| format!("0x{}", hex::encode(&account.address))),
+        };
+
+        return Ok(result);
     }
 }
 

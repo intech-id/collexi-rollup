@@ -96,6 +96,7 @@ pub mod leader_election;
 pub mod prover;
 //pub mod tokens; // TODO ADE: remove token
 pub mod utils;
+pub mod colexi;
 
 pub use crate::connection::ConnectionPool;
 
@@ -162,6 +163,10 @@ impl StorageProcessor {
     // Gains access to the `LeaderElection` schema.
     pub fn leader_election_schema(&self) -> leader_election::LeaderElectionSchema<'_> {
         leader_election::LeaderElectionSchema(self)
+    }
+
+    pub fn colexi_queries(&self) -> colexi::ColexiQueries<'_> {
+        colexi::ColexiQueries(self)
     }
 
     /// Performs several database operations within one database transaction.
