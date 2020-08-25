@@ -5,8 +5,8 @@ use chrono::NaiveDateTime;
 pub struct TransferOperation {
     #[sql_type = "BigInt"]
     pub block_number: i64,
-    #[sql_type = "Text"]
-    pub from: String,
+    #[sql_type = "Nullable<Text>"]
+    pub from: Option<String>,
     #[sql_type = "Text"]
     pub to: String,
     #[sql_type = "Binary"]

@@ -150,7 +150,7 @@ pub struct ContractAddressResp {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TransferHistory {
-    pub from: String,
+    pub from: Option<String>,
     pub to: String,
     pub verified: bool,
     pub block_number: i64,
@@ -782,7 +782,22 @@ impl Rpc for RpcApp {
     fn token_info(&self, token_id: u16) -> Result<TokenInfoResp> {
         log::debug!("Get token_info for token {}", token_id);
         let storage = self.access_storage()?;
-        let history = storage.colexi_queries().get_transfer_history(token_id).map_err(|err| {
+        let mut full_history = storage.colexi_queries().get_initial_deposit(token_id).map_err(|err| {
+            log::error!(
+                "[{}:{}:{}] Internal Server Error: '{}';",
+                file!(),
+                line!(),
+                column!(),
+                err
+            );
+            Error::internal_error()
+        }).map(|tr| {
+            match tr {
+                Some(tr) => vec!(tr),
+                None => Vec::new()
+            }
+        })?; 
+        let mut history = storage.colexi_queries().get_transfer_history(token_id).map_err(|err| {
             log::error!(
                 "[{}:{}:{}] Internal Server Error: '{}';",
                 file!(),
@@ -792,7 +807,8 @@ impl Rpc for RpcApp {
             );
             Error::internal_error()
         })?;
-        let history: Vec<TransferHistory> = history.iter().map(|transfer| {
+        full_history.append(&mut history);
+        let history: Vec<TransferHistory> = full_history.iter().map(|transfer| {
             TransferHistory {
                 from: transfer.from.clone(),
                 to: transfer.to.clone(),
