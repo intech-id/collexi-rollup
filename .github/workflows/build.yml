@@ -79,3 +79,10 @@ jobs:
           kubectl rollout restart --namespace $NAMESPACE deployment/$DEPLOYMENT_NAME_PROVER
           kubectl rollout status --namespace $NAMESPACE deployment/$DEPLOYMENT_NAME_PROVER
   
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@master
+        env:
+          SLACK_USERNAME: 'GitHub'
+          SLACK_ICON: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png'
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_FOOTER: 'GitHub Actions notifications for colexi-rollup'
