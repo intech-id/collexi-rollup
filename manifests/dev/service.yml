@@ -23,8 +23,7 @@ metadata:
   labels:
     app: zksync-server
 spec:
-  type: LoadBalancer
-  loadBalancerIP: '34.78.182.61'
+  type: ClusterIP
   ports:
     - port: 3000
       targetPort: 3000
