@@ -3,17 +3,17 @@ on:
   push:
      branches:
        - dev
+       - master
 
 env:
   IMAGE: zksync
-  IMAGE_TAG: dev
   REGISTRY_HOSTNAME: gcr.io
-  NAMESPACE: colexi-dev
   GKE_ZONE: europe-west1-b	
   GKE_CLUSTER: colexi-dev
   DEPLOYMENT_NAME_SERVER: zksync-server
   DEPLOYMENT_NAME_PROVER: zksync-prover
-  ERC721_ADDRESS: '0x5E6D086F5eC079ADFF4FB3774CDf3e8D6a34F7E9'
+  ERC721_ADDRESS_DEV: '0x5E6D086F5eC079ADFF4FB3774CDf3e8D6a34F7E9'
+  ERC721_ADDRESS_TEST: '0x7D45A3E9D1A37A4Ccf79a2599e9E1285feC06F5B'
 
 jobs:
   build:
@@ -21,6 +21,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
+      - name: Set IMAGE_TAG
+        run: |
+          export IMAGE_TAG="${GITHUB_REF##*/}"
+          echo "::set-env name=IMAGE_TAG::$IMAGE_TAG"
+
+      - name: Set ERC721_ADDRESS for dev environment
+        if: github.ref == 'refs/heads/dev'
+        run: |
+          echo "::set-env name=ERC721_ADDRESS::$ERC721_ADDRESS_DEV"
+
+      - name: Set ERC721_ADDRESS for test environment
+        if: github.ref == 'refs/heads/master'
+        run: |
+          echo "::set-env name=ERC721_ADDRESS::$ERC721_ADDRESS_TEST"
 
       - name: checkout
         uses: actions/checkout@v2
@@ -66,23 +80,47 @@ jobs:
 
       - name: Publish to GCR
         run: docker push $REGISTRY_HOSTNAME/${{ secrets.GKE_PROJECT }}/$IMAGE:$IMAGE_TAG
-  
-      - name: Deploy to GKE
-        run: |
-          gcloud container clusters get-credentials $GKE_CLUSTER --zone $GKE_ZONE --project ${{ secrets.GKE_PROJECT }}
-          kubectl apply -f manifests/configmap.yml
-          kubectl apply -f manifests/secret.yml
-          kubectl apply -f manifests/service.yml
-          kubectl apply -f manifests/deployment.yml
-          kubectl rollout restart --namespace $NAMESPACE deployment/$DEPLOYMENT_NAME_SERVER
-          kubectl rollout status --namespace $NAMESPACE deployment/$DEPLOYMENT_NAME_SERVER
-          kubectl rollout restart --namespace $NAMESPACE deployment/$DEPLOYMENT_NAME_PROVER
-          kubectl rollout status --namespace $NAMESPACE deployment/$DEPLOYMENT_NAME_PROVER
-  
-      - name: Slack Notification
-        uses: rtCamp/action-slack-notify@master
-        env:
-          SLACK_USERNAME: 'GitHub'
-          SLACK_ICON: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png'
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_FOOTER: 'GitHub Actions notifications for colexi-rollup'
+    
+    deploy_dev:
+      name: Deploy in DEV environment
+      if: github.ref == 'refs/heads/dev'
+      needs: build
+      runs-on: ubuntu-latest
+      steps:
+        - name: Deploy to GKE
+          run: |
+            gcloud container clusters get-credentials $GKE_CLUSTER --zone $GKE_ZONE --project ${{ secrets.GKE_PROJECT }}
+            kubectl apply -f manifests/dev/configmap.yml
+            kubectl apply -f manifests/dev/secret.yml
+            kubectl apply -f manifests/dev/service.yml
+            kubectl apply -f manifests/dev/deployment.yml
+            kubectl rollout restart --namespace colexi-dev deployment/$DEPLOYMENT_NAME_SERVER
+            kubectl rollout status --namespace colexi-dev deployment/$DEPLOYMENT_NAME_SERVER
+            kubectl rollout restart --namespace colexi-dev deployment/$DEPLOYMENT_NAME_PROVER
+            kubectl rollout status --namespace colexi-dev deployment/$DEPLOYMENT_NAME_PROVER
+        
+        - name: Slack Notification
+          uses: rtCamp/action-slack-notify@master
+          env:
+            SLACK_USERNAME: 'GitHub'
+            SLACK_ICON: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png'
+            SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+            SLACK_FOOTER: 'GitHub Actions notifications for colexi-rollup'
+
+    deploy_test:
+      name: Deploy in TEST environment
+      if: github.ref == 'refs/heads/master'
+      needs: build
+      runs-on: ubuntu-latest
+      steps:
+        - name: Deploy to GKE
+          run: |
+            gcloud container clusters get-credentials $GKE_CLUSTER --zone $GKE_ZONE --project ${{ secrets.GKE_PROJECT }}
+            kubectl apply -f manifests/test/configmap.yml
+            kubectl apply -f manifests/test/secret.yml
+            kubectl apply -f manifests/test/service.yml
+            kubectl apply -f manifests/test/deployment.yml
+            kubectl rollout restart --namespace colexi-test deployment/$DEPLOYMENT_NAME_SERVER
+            kubectl rollout status --namespace colexi-test deployment/$DEPLOYMENT_NAME_SERVER
+            kubectl rollout restart --namespace colexi-test deployment/$DEPLOYMENT_NAME_PROVER
+            kubectl rollout status --namespace colexi-test deployment/$DEPLOYMENT_NAME_PROVER
